@@ -1,14 +1,14 @@
 # Домашнее задание 2.2
 
 ## Структура решения
-* `hw2_2_solution.ipynb` — Jupyter Notebook с кодом и выполненными ячейками для всех трех заданий.
+* `hw2_2.ipynb` — Jupyter Notebook с кодом и выполненными ячейками для всех трех заданий.
 * `README.md` — данная инструкция.
 
 ## Инструкция по запуску
 1. Запустите окружение через Docker:
    `docker compose -f docker/docker-compose.yml up -d`
 2. Откройте Jupyter Notebook по адресу `http://localhost:8888`.
-3. Запустите ноутбук `hw2_2_solution.ipynb` сверху вниз (Kernel -> Restart & Run All).
+3. Запустите ноутбук `hw2_2.ipynb` сверху вниз (Kernel -> Restart & Run All).
 
 ## Пути к входным данным (Inputs)
 * Локальные файлы:
