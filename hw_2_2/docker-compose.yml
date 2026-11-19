@@ -1,0 +1,43 @@
+services:
+  rustfs:
+    image: rustfs/rustfs:1.0.0-alpha.82
+    container_name: rustfs
+    ports:
+      - "9002:9000"
+      - "9001:9001"
+    environment:
+      RUSTFS_ACCESS_KEY: rustfsadmin
+      RUSTFS_SECRET_KEY: rustfsadmin
+    volumes:
+      - rustfs_data:/data
+    command: ["/data"]
+    healthcheck:
+      test: ["CMD-SHELL", "nc -z 127.0.0.1 9000 || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 60s
+
+  jupyter:
+    image: jupyter/pyspark-notebook:spark-3.5.0
+    container_name: jupyter
+    ports:
+      - "8888:8888"
+    environment:
+      JUPYTER_ENABLE_LAB: "yes"
+      AWS_ACCESS_KEY_ID: rustfsadmin
+      AWS_SECRET_ACCESS_KEY: rustfsadmin
+      AWS_REGION: us-east-1
+    volumes:
+      - ../notebooks:/home/jovyan/work
+      - ../spark-apps:/home/jovyan/spark-apps
+      - ../data:/home/jovyan/data
+      - ../data4hw2_2:/home/jovyan/data4hw2_2
+      - ../event_log_22:/home/jovyan/event_log_22
+    depends_on:
+      rustfs:
+        condition: service_healthy
+    command: start-notebook.sh --NotebookApp.token=''
+
+volumes:
+  rustfs_data:
