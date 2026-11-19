@@ -1,0 +1,5 @@
+.env
+data/
+spark-warehouse/
+__pycache__/
+*.pyc
