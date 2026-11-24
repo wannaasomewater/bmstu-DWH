@@ -1,0 +1,16 @@
+# Python
+__pycache__/
+*.pyc
+.venv/
+
+# Airflow
+airflow.db
+airflow-webserver.pid
+logs/
+
+# Большие jar-артефакты (скачиваются отдельно)
+*.jar
+final_project/solution/scripts/jars/
+
+# macOS
+.DS_Store
