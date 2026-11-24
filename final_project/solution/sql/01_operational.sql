@@ -1,4 +1,4 @@
--- Speed layer. Имена полей — строго по data/README (watch_time_seconds, query).
+-- Speed layer
 DROP VIEW IF EXISTS speed_views_per_minute_mv;
 DROP TABLE IF EXISTS speed_views_per_minute;
 DROP VIEW IF EXISTS mv_events;
@@ -9,7 +9,7 @@ DROP TABLE IF EXISTS mv_events_old;
 DROP TABLE IF EXISTS target_events;
 DROP TABLE IF EXISTS mv_events_old;
 
--- Kafka Engine: читает топик cinema.events отдельной consumer group.
+-- Kafka Engine
 CREATE TABLE kafka_events (
     event_id           String,
     event_time         DateTime,
@@ -27,7 +27,7 @@ SETTINGS kafka_broker_list = 'kafka:29092',
          kafka_num_consumers = 1,
          input_format_skip_unknown_fields = 1;
 
--- Каноническая таблица событий: дедуп по event_id через ReplacingMergeTree.
+-- Каноническая таблица событий
 CREATE TABLE events (
     event_id           String,
     event_time         DateTime,
@@ -46,7 +46,7 @@ SELECT event_id, event_time, user_id, event_type,
 FROM kafka_events;
 
 -- Target speed-агрегат. Refreshable MV периодически пересчитывает
--- из events FINAL, поэтому повторы не завышают показатели.
+-- из events FINAL, поэтому повторы не завышают показатели
 CREATE TABLE speed_views_per_minute (
     minute        DateTime,
     content_id    UInt32,
@@ -69,5 +69,5 @@ FROM events FINAL
 WHERE event_type = 'view' AND content_id IS NOT NULL
 GROUP BY minute, content_id;
 
--- Сразу дёрнем первичный refresh, чтобы данные появились без ожидания.
+-- Сразу дёрнем первичный refresh, чтобы данные появились без ожидания
 SYSTEM REFRESH VIEW speed_views_per_minute_mv;

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Spark batch: prepare -> scd2 -> marts -> validate -> publish."""
+"""Spark batch - prepare -> scd2 -> marts -> validate -> publish."""
 import argparse, sys
 from datetime import datetime
 import clickhouse_connect

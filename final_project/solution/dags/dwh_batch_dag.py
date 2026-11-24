@@ -1,4 +1,4 @@
-"""DAG: prepare -> scd2 -> marts -> validate -> publish -> advance_boundary.
+"""DAG - prepare -> scd2 -> marts -> validate -> publish -> advance_boundary.
 
 Параметр: calc_date (YYYY-MM-DD, UTC) — расчётный интервал
 [calc_date 00:00, calc_date+1 00:00). T продвигается на calc_date+1
@@ -26,7 +26,7 @@ CH_URL = "http://clickhouse:8123/"
 
 
 def _ch(sql: str) -> str:
-    """POST body → работает и для SELECT, и для INSERT.
+    """POST body - работает и для SELECT, и для INSERT.
     GET ?query= ломается на INSERT ... VALUES (HTTP 500)."""
     req = urllib.request.Request(
         CH_URL,

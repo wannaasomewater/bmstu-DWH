@@ -1,4 +1,4 @@
--- Batch target tables (публикует Spark после проверок).
+-- Batch target tables
 DROP TABLE IF EXISTS batch_views_per_minute;
 DROP TABLE IF EXISTS batch_views_by_country_tier;
 DROP TABLE IF EXISTS batch_top5_content_daily;
@@ -67,7 +67,7 @@ CREATE TABLE scd2_profiles (
 ) ENGINE = ReplacingMergeTree(processed_at)
 ORDER BY (user_id, valid_from);
 
--- Граница T: batch покрывает minute < T, speed — minute >= T.
+-- Граница T - batch покрывает minute < T, speed — minute >= T
 CREATE TABLE report_boundary (
     id          UInt8 DEFAULT 1,
     boundary_t  DateTime,
