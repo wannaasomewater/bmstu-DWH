@@ -184,6 +184,12 @@ FROM speed_views_per_minute FINAL ORDER BY minute DESC LIMIT 20;
 
 **Airflow (`manual__2026-11-24T13:43:27 success`):** 6 задач `success`, T `2026-01-01 → 2026-01-02`, batch = `1491 / 3755275` — идемпотентно с `stage2`.
 
+### Повторный запуск на том же срезе
+
+```bash
+docker exec airflow airflow dags trigger dwh_batch_daily --conf '{"calc_date": "2026-01-01"}'
+```
+
 ### По пунктам из REQUIREMENTS
 
 | № | Где реализовано |
