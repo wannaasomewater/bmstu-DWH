@@ -12,45 +12,45 @@ Airflow DAG - prepare -> scd2 -> marts -> validate -> publish -> advance_boundar
 (Spark, RDD↔DataFrame сверка, публикация в ClickHouse, T только после успеха)
 ```
 
-## Проектные решения (обоснования)
+## Проектные решения
 
-### Speed-слой (п.1)
+### Speed-слой
 - **`events` = `ReplacingMergeTree(_loaded_at) ORDER BY event_id`.** Повторная доставка из Kafka не завышает показатели: агрегат всегда читает `events FINAL`, где для каждого `event_id` остаётся последняя версия.
 - **`speed_views_per_minute` = `ReplacingMergeTree + Refreshable MV (REFRESH EVERY 30 SECOND)`.** SummingMergeTree накапливал двойной счёт после повторов - MV из него складывает дельты, а `FINAL` не схлопывает промежуточные суммы. Refreshable MV полностью пересчитывает агрегат по `events FINAL`.
 - **Kafka Engine `kafka_group_name='ch_speed_events_v1'`** - отдельная CG, не пересекается с `s3_archiver_group`.
 
-### S3-архив (п.2)
+### S3-архив 
 - **Отдельная CG `s3_archiver_group`**, `auto_offset_reset=earliest`, `enable.auto.commit=True`.
 - Партиционирование `raw_events/dt=YYYY-MM-DD` по `event_time[:10]` (business date), `raw_profile_changes/dt=YYYY-MM-DD` по `effective_at[:10]`.
 - `ref_catalogue/` - каталог (200 объектов), `control_set/` - контрольный набор для RDD↔DF.
 
-### SCD2 (п.3)
+### SCD2 
 - `row_number() over (user_id, effective_at, available_at ASC)` - детерминированный выбор при одинаковом `effective_at`.
 - `lag(country/tier)` - фильтр «смена состояния»; повтор того же state с новым `change_id` не создаёт версию.
 - `lead(effective_at) AS valid_to` - интервалы `[valid_from, valid_to)`. Открытая версия = `2105-12-31`.
 - Пересечения проверяются в `validate`; результат = 0.
 
-### Batch + исторический JOIN (п.4)
+### Batch + исторический JOIN 
 - JOIN с SCD2 по `event_time ∈ [valid_from, valid_to)` - версия профиля **на момент события**.
 - JOIN с каталогом по `content_id`. `unmatched=0` - каждая запись получила ровно одну версию профиля и один объект каталога.
 - Дедупликация `dropDuplicates(["event_id"])` до JOIN - повторы не задваивают минуты.
 
-### RDD↔DataFrame (п.5)
+### RDD↔DataFrame 
 - `validate` читает `s3a://dwh-archive/control_set/*.jsonl` (fixture, 28 строк).
 - Top-5: `count DESC, content_id ASC` (детерминированный tie-break).
 - Word-freq: `lower(query)`, `split\s+`, `length > 4`.
 - Оба правила дают идентичный результат в RDD и DataFrame.
 
-### Публикация (п.8)
+### Публикация 
 - `ALTER TABLE … DELETE WHERE run_id=current` + `INSERT` в ReplacingMergeTree(processed_at). При пересчёте старые версии по `(minute, content_id)` схлопываются.
 - Метаполя `run_id`, `calc_interval_start`, `calc_interval_end`, `processed_at` - по результату определяется запуск.
 
-### Граница T (п.7)
+### Граница T 
 - `report_boundary(id=1, boundary_t)` - точка раздела.
 - `common_report`: `batch WHERE minute < T UNION ALL speed WHERE minute >= T`.
 - `advance_boundary` двигает `T <- interval_end` **только если** `current_t == interval_start`. Пересчёт исторического дня не откатывает T.
 
-### Поздние события (п.9)
+### Поздние события 
 - `s3_archiver` пишет поздние события с их **business date**, а не с текущей датой.
 - Пересчёт затронутого дня берёт все файлы по `dt=<business_date>`.
 - Демонстрация: `stage1` (без late) `views=1421, secs=3581408` → `stage2` (после late) `views=1491, secs=3755275`. Δ `+70` просмотров за 1 января, дублей нет.
@@ -185,7 +185,7 @@ Baseline 1 января (stage1): events_dedup=5690, scd2=179, views=1421, secs=
 Airflow (manual__2026-11-24T13:43:27 success): 6 задач success, T 2026-01-01 → 2026-01-02, batch = 1491/3755275 (идемпотентно с stage2).
 ```
 
-### Соответствие REQUIREMENTS
+### По пунктам из REQUIREMENTS
 
 №	Где реализовано
 1	sql/01_operational.sql, speed_views_per_minute_mv
