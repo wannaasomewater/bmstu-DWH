@@ -12,7 +12,7 @@ Airflow DAG - prepare -> scd2 -> marts -> validate -> publish -> advance_boundar
 (Spark, RDD↔DataFrame сверка, публикация в ClickHouse, T только после успеха)
 ```
 
-## Проектные решения
+## Что было сделано по проекту
 
 ### Speed-слой
 - Сначала сделал speed_views_per_minute на SummingMergeTree. На повторах из demo-набора он начал складывать дельты дважды, и FINAL не помогал — суммирование это не дедупликация. Переделал на ReplacingMergeTree + Refreshable MV (REFRESH EVERY 30 SECOND): MV при каждом refresh полностью пересчитывает агрегат по events FINAL, где для каждого event_id уже лежит одна версия. Проверил на 6138 сообщении (6000 уникальных + 138 дублей) — count() и uniqExact(event_id) совпали.
@@ -23,7 +23,7 @@ Airflow DAG - prepare -> scd2 -> marts -> validate -> publish -> advance_boundar
 - `ref_catalogue/` - каталог (200 объектов), `control_set/` - контрольный набор для RDD↔DF.
 
 ### SCD2 
- - Сначала row_number() по (user_id, effective_at, available_at ASC) — отбрасываю повторную доставку, оставляю самую раннюю. -
+ - Сначала row_number() по (user_id, effective_at, available_at ASC) — отбрасываю повторную доставку, оставляю самую раннюю.
  - Потом lag(country/tier) - если state не изменился, версия не создаётся.
  - Потом lead(effective_at) даёт valid_to, интервалы полуоткрытые [valid_from, valid_to), событие на границе относится к новой версии. Открытая версия получает 2105-12-31 как sentinel.
  - Для проверки пересечений — отдельный запрос в validate через leadInFrame по valid_from; если valid_to > next_from — пайплайн падает. После первой реализации было 3 пересечения — забыл, что повторный state с новым change_id тоже нужно схлопывать. После добавления фильтра — 0.
